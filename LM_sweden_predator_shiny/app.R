@@ -15,7 +15,7 @@ ui <- fluidPage(
     titlePanel("Exploring top predator hunting statistics"),
     # choice of output
     p("This creates Linear Mixed Effect Models for the Swedish hunting data ~ pic your variables to analyse and then investigate the trends indifferent variables"),
-    radioButtons("bins1"," Analysis to undertake ",choices=c("Time_series", "Mixed Effect Models"), selected=c("Time_series")),
+    radioButtons("bins1"," Analysis to undertake ",choices=c("Fixed Effect Models", "Mixed Effect Models"), selected=c("Fixed Effect Models")),
     
     
     # select the variable to plot
@@ -38,12 +38,13 @@ server <- function(input, output) {
     plot_info <- reactive({
         choice1<-input$bins1
         choice2<-input$bins2
-        # choice1<-c("Time_series")
+        # choice1<-c("Fixed Effect Model")
         # choice2<-c("Mixed Effect Models")
-        cat("choice 1 =",choice1, " choice 2 ", choice2,"\n")
+        #cat("choice 1 =",choice1, " choice 2 ", choice2,"\n")
         
-        if(choice1=="Time_series")
+        if(choice1=="Fixed Effect Models")
         {
+            print("inside choice1 fixed effect")
             df.dat<-cbind(sweden$county, sweden$time, sweden[,choice2])
             df.dat<-data.frame(df.dat)
             
@@ -59,6 +60,33 @@ server <- function(input, output) {
                 facet_wrap(~County)
             return(myplot)
         }
+        # else if (choice1 == "Mixed Effect Models random intercept")
+        # {
+        #     df.dat<-cbind(sweden$county, sweden$time, sweden[,choice2])
+        #     df.dat<-data.frame(df.dat)
+        #     
+        #     colnames(df.dat)<-c("County","time","Counts")
+        #     df.grp <- groupedData(Counts ~ 1 | County, data=df.dat)
+        #     test.gls<-lme(log(Counts+1)~time, random=~1|County,df.dat)
+        #     print(test.gls$call)
+        #     print(summary(test.gls))
+        #     print(summary(df.grp))
+        #     #fitted2 <- exp(augPred(test.gls)+1)
+        #     fitted<-exp(fitted(test.gls))-1
+        #     print(ls())
+        #      
+        #     #  get the statistics for the model
+        #     test_df2<-cbind(df.dat$County, df.dat$time,df.dat$Counts,fitted)
+        #     test_df2<-data.frame(test_df2)
+        #     colnames(test_df2)<-c("County","time","Counts","fitted")
+        # 
+        #     myplot <- ggplot(test_df2,mapping= aes(x=time)) +
+        #         geom_line(aes(y=`Counts`),color="blue")+
+        #         geom_line(aes(y=`fitted`),color="red")+
+        #         labs(y="Numbers", title=choice2)+
+        #         facet_wrap(~County)
+        #     return(myplot)
+        #}
         else
         {
             df.dat<-cbind(sweden$county, sweden$time, sweden[,choice2])
@@ -66,7 +94,7 @@ server <- function(input, output) {
             
             colnames(df.dat)<-c("County","time","Counts")
             df.grp <- groupedData(Counts ~ time | County, data=df.dat)
-            test.gls<-lme(log(Counts+1)~time, random=~time|County,df.grp)
+            test.gls<-lme(log(Counts+1)~time, random=~time|County,df.dat)
             print(test.gls$call)
             print(summary(test.gls))
             print(summary(df.grp))
@@ -74,21 +102,11 @@ server <- function(input, output) {
             fitted<-exp(fitted(test.gls))-1
             print(ls())
             #  get the statistics for the model
-            # test.sum<-summary(test.gls)
-            # test.t<-test.sum$tTable
-            # poo<-nrow(df.dat)
-            # Variable=rep(c("fitted"), poo)
-            # test_df2<-cbind(df.dat$County, df.dat$time,df.dat$Counts,fitted)
-            # test_df2<-data.frame(test_df2)
-            # colnames(test_df2)<-c("County","time","Counts","fitted")
-            # 
-            # test_df2<-data.frame(test_df2)
-            #colnames(fitted) <- c("time", "county", "values", "type")
-            # myplot <- ggplot(fitted, aes(x=time, y=values, fill = "type")) +
-            #     geom_line() +
-            #     facet_wrap(~county)
-            res.dat <- data.frame(cbind(df.dat, fitted))
-            myplot <- ggplot(res.dat,mapping= aes(x=time)) +
+            test_df2<-cbind(df.dat$County, df.dat$time,df.dat$Counts,fitted)
+            test_df2<-data.frame(test_df2)
+            colnames(test_df2)<-c("County","time","Counts","fitted")
+
+            myplot <- ggplot(test_df2, mapping= aes(x=time)) +
                 geom_line(aes(y=`Counts`),color="blue")+
                 geom_line(aes(y=`fitted`),color="red")+
                 labs(y="Numbers", title=choice2)+
@@ -100,7 +118,7 @@ server <- function(input, output) {
     table_info <- reactive({
         choice1<-input$bins1
         choice2<-input$bins2
-        if(input$bins1=="Time_series")
+        if(input$bins1=="Fixed Effect Models")
         {
             df.dat<-cbind(sweden$county,sweden$time,sweden[,choice2])
             df.dat<-data.frame(df.dat)
@@ -125,7 +143,7 @@ server <- function(input, output) {
 
             colnames(df.dat)<-c("County","time","Counts")
 
-            test.gls<-lme(log(Counts+1)~time, random=~1|County,df.dat)
+            test.gls<-lme(log(Counts+1)~time, random=~time|County,df.dat)
             fitted<-exp(fitted(test.gls))-1
             #  get the statistics for the model
             test.sum<-summary(test.gls)
