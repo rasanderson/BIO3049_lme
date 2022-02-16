@@ -39,81 +39,101 @@ server <- function(input, output) {
         choice1<-input$bins1
         choice2<-input$bins2
         # choice1<-c("Time_series")
-        # choice2<-c("Seed_sown")
-        #cat("choice 1 ",choice1, " choice 2 ", choice2,"\n")
-        df.dat<-cbind(sweden$county,sweden$time,sweden[,choice2])
-        df.dat<-data.frame(df.dat)
-        
-        colnames(df.dat)<-c("County","time","Counts")
+        # choice2<-c("Mixed Effect Models")
+        cat("choice 1 =",choice1, " choice 2 ", choice2,"\n")
         
         if(choice1=="Time_series")
         {
+            df.dat<-cbind(sweden$county, sweden$time, sweden[,choice2])
+            df.dat<-data.frame(df.dat)
+            
+            colnames(df.dat)<-c("County","time","Counts")
+            
+            test.gls<-gls(log(Counts+1)~time, data=df.dat)
+            fitted<-exp(fitted(test.gls))-1
             myplot <- ggplot(df.dat, mapping=aes(x=time))+
                 geom_line(aes(y=`Counts`),color="blue")+
+                geom_line(aes(y=`fitted`, color="red"))+
                 labs(y="Numbers", title=`choice2`)+
+                theme(legend.position="none")+
                 facet_wrap(~County)
             return(myplot)
         }
         else
         {
-            test.gls<-lme(log(Counts+1)~time, random=~1|County,df.dat)
-            fitted<-exp(fitted(test.gls))-1
-            #  get the statistics for the model
-            test.sum<-summary(test.gls)
-            test.t<-test.sum$tTable
-            poo<-nrow(df.dat)
-            Variable=rep(c("fitted"), poo)
-            test_df2<-cbind(df.dat$County,df.dat$time,df.dat$Counts,fitted)
-            test_df2<-data.frame(test_df2)
-            colnames(test_df2)<-c("County","time","Counts","fitted")
+            df.dat<-cbind(sweden$county, sweden$time, sweden[,choice2])
+            df.dat<-data.frame(df.dat)
             
-            test_df2<-data.frame(test_df2)
-            myplot <- ggplot(test_df2,mapping= aes(x=time)) +
+            colnames(df.dat)<-c("County","time","Counts")
+            df.grp <- groupedData(Counts ~ time | County, data=df.dat)
+            test.gls<-lme(log(Counts+1)~time, random=~time|County,df.grp)
+            print(test.gls$call)
+            print(summary(test.gls))
+            print(summary(df.grp))
+            #fitted2 <- exp(augPred(test.gls)+1)
+            fitted<-exp(fitted(test.gls))-1
+            print(ls())
+            #  get the statistics for the model
+            # test.sum<-summary(test.gls)
+            # test.t<-test.sum$tTable
+            # poo<-nrow(df.dat)
+            # Variable=rep(c("fitted"), poo)
+            # test_df2<-cbind(df.dat$County, df.dat$time,df.dat$Counts,fitted)
+            # test_df2<-data.frame(test_df2)
+            # colnames(test_df2)<-c("County","time","Counts","fitted")
+            # 
+            # test_df2<-data.frame(test_df2)
+            #colnames(fitted) <- c("time", "county", "values", "type")
+            # myplot <- ggplot(fitted, aes(x=time, y=values, fill = "type")) +
+            #     geom_line() +
+            #     facet_wrap(~county)
+            res.dat <- data.frame(cbind(df.dat, fitted))
+            myplot <- ggplot(res.dat,mapping= aes(x=time)) +
                 geom_line(aes(y=`Counts`),color="blue")+
                 geom_line(aes(y=`fitted`),color="red")+
                 labs(y="Numbers", title=choice2)+
                 facet_wrap(~County)
             return(myplot)
         }
-    }) 
+    })
     
     table_info <- reactive({
         choice1<-input$bins1
         choice2<-input$bins2
-        # if(input$bins1=="Time_series")
-        # {
+        if(input$bins1=="Time_series")
+        {
             df.dat<-cbind(sweden$county,sweden$time,sweden[,choice2])
             df.dat<-data.frame(df.dat)
             
             colnames(df.dat)<-c("County","time","Counts")
             
+            test.gls<-gls(log(Counts+1)~time, df.dat)
+            fitted<-exp(fitted(test.gls))-1
+            #  get the statistics for the model
+            test.sum<-summary(test.gls)
+            test.t<-test.sum$tTable
+
+            return(test.sum)      
+        }
+        else
+        {
+            # choice1<-c("Time_series")
+            # choice2<-c("Seed_sown")
+            #cat("choice 1 ",choice1, " choice 2 ", choice2,"\n")
+            df.dat<-cbind(sweden$county,sweden$time,sweden[,choice2])
+            df.dat<-data.frame(df.dat)
+
+            colnames(df.dat)<-c("County","time","Counts")
+
             test.gls<-lme(log(Counts+1)~time, random=~1|County,df.dat)
             fitted<-exp(fitted(test.gls))-1
             #  get the statistics for the model
             test.sum<-summary(test.gls)
             test.t<-test.sum$tTable
-            cat("about to return\n")
-            return(test.sum)      
-        #}
-        # else
-        # {
-        #     # choice1<-c("Time_series")
-        #     # choice2<-c("Seed_sown")
-        #     cat("choice 1 ",choice1, " choice 2 ", choice2,"\n")
-        #     df.dat<-cbind(sweden$county,sweden$time,sweden[,choice2])
-        #     df.dat<-data.frame(df.dat)
-        #     
-        #     colnames(df.dat)<-c("County","time","Counts")
-        #     
-        #     test.gls<-lme(log(Counts+1)~time, random=~1|County,df.dat)
-        #     fitted<-exp(fitted(test.gls))-1
-        #     #  get the statistics for the model
-        #     test.sum<-summary(test.gls)
-        #     test.t<-test.sum$tTable
-        #     cat("Trying to do table\n")
-        #     return(test.sum)      
-        # }
-        
+
+            return(test.sum)
+        }
+
     })
     
     output$distPlot <- renderPlot({
