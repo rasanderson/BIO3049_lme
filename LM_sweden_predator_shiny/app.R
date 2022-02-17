@@ -47,17 +47,18 @@ server <- function(input, output) {
             print("inside choice1 fixed effect")
             df.dat<-cbind(sweden$county, sweden$time, sweden[,choice2])
             df.dat<-data.frame(df.dat)
-            
             colnames(df.dat)<-c("County","time","Counts")
+            County_name <- sweden$County_name
             
             test.gls<-gls(log(Counts+1)~time, data=df.dat)
             fitted<-exp(fitted(test.gls))-1
+            df.dat <- cbind(df.dat, fitted, County_name)
             myplot <- ggplot(df.dat, mapping=aes(x=time))+
                 geom_line(aes(y=`Counts`),color="blue")+
                 geom_line(aes(y=`fitted`, color="red"))+
                 labs(y="Numbers", title=`choice2`)+
                 theme(legend.position="none")+
-                facet_wrap(~County)
+                facet_wrap(~County_name)
             return(myplot)
         }
         # else if (choice1 == "Mixed Effect Models random intercept")
@@ -95,9 +96,9 @@ server <- function(input, output) {
             colnames(df.dat)<-c("County","time","Counts")
             df.grp <- groupedData(Counts ~ time | County, data=df.dat)
             test.gls<-lme(log(Counts+1)~time, random=~time|County,df.dat)
-            print(test.gls$call)
-            print(summary(test.gls))
-            print(summary(df.grp))
+            # print(test.gls$call)
+            # print(summary(test.gls))
+            # print(summary(df.grp))
             #fitted2 <- exp(augPred(test.gls)+1)
             fitted<-exp(fitted(test.gls))-1
             print(ls())
@@ -105,12 +106,14 @@ server <- function(input, output) {
             test_df2<-cbind(df.dat$County, df.dat$time,df.dat$Counts,fitted)
             test_df2<-data.frame(test_df2)
             colnames(test_df2)<-c("County","time","Counts","fitted")
-
+            County_name <- sweden$County_name
+            test_df2 <- cbind(test_df2, County_name)
+            
             myplot <- ggplot(test_df2, mapping= aes(x=time)) +
                 geom_line(aes(y=`Counts`),color="blue")+
                 geom_line(aes(y=`fitted`),color="red")+
                 labs(y="Numbers", title=choice2)+
-                facet_wrap(~County)
+                facet_wrap(~County_name)
             return(myplot)
         }
     })
