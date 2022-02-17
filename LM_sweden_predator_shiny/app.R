@@ -1,7 +1,6 @@
 ## a shiny app for loading data for a SEM
 library(shiny)
 library(ggplot2)
-library(piecewiseSEM)
 library(nlme)
 
 sweden<-read.csv("sweden.csv", header=TRUE, sep=",")
